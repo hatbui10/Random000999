@@ -90,14 +90,21 @@ function generateHalfUnique(){
     set.add(num);
   }
 
-  // 🔥 Sắp xếp từ bé đến lớn
+  // Sắp xếp tăng dần
   const sorted = Array.from(set).sort((a, b) => Number(a) - Number(b));
 
-  const result = sorted.map(n => `"${n}"`);
-  document.getElementById("output").value = result.join(",");
+  // Chia mỗi dòng 100 số
+  const lines = [];
+  for(let i = 0; i < sorted.length; i += 100){
+    const chunk = sorted
+      .slice(i, i + 100)
+      .map(n => `"${n}"`)
+      .join(",");
+    lines.push(chunk);
+  }
+
+  document.getElementById("output").value = lines.join("\n");
 }
-
-
 
 
 
