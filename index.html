@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ thêm ID tự động</title>
+    <title>Công cụ thêm ID và Lớp tự động</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -29,6 +29,19 @@
             font-size: 11px;
             border: 1px solid #cbd5e1;
             border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            font-size: 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            outline: none;
+            background-color: #f8fafc;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 8px;
         }
         button {
             width: 100%;
@@ -40,6 +53,7 @@
             border-radius: 4px;
             margin-top: 5px;
             font-size: 13px;
+            cursor: pointer;
         }
         button:active { background-color: #2563eb; }
     </style>
@@ -47,34 +61,48 @@
 <body>
 
 <div class="box">
-    <h3>1. Dán code gốc của bạn vào đây:</h3>
+    <h3>1. Cấu hình thông tin và dán code gốc:</h3>
+    
+    <label style="display:block; margin-bottom: 4px; font-weight: bold; color: #475569;">Chọn lớp gán cho danh sách này:</label>
+    <select id="classSelect">
+        <option value="SKY-KID">Lớp SKY-KID</option>
+        <option value="10A1">Lớp 10A1</option>
+        <option value="11B2">Lớp 11B2</option>
+    </select>
+
+    <label style="display:block; margin-bottom: 4px; font-weight: bold; color: #475569;">Dán code gốc của bạn vào đây:</label>
     <textarea id="inputCode" placeholder='{ name: "Nguyễn Giản Long Vũ", phone: "0989882688" },&#10;{ name: "Nguyễn An Như (Cún)", phone: "0964243909" },'></textarea>
-    <button onclick="convertCode()">BẤM ĐỂ TỰ ĐỘNG THÊM ID</button>
+    
+    <button onclick="convertCode()">BẤM ĐỂ TỰ ĐỘNG THÊM ID & LỚP</button>
 </div>
 
 <div class="box">
     <h3>2. Kết quả thu được (Copy mã này dùng):</h3>
-    <textarea id="outputCode" readonly placeholder="Kết quả sẽ hiển thị tại đây..."></textarea>
+    <textarea id="outputCode" readonly placeholder="Kết quả định dạng chuẩn sẽ hiển thị tại đây..."></textarea>
 </div>
 
 <script>
 function convertCode() {
     let input = document.getElementById('inputCode').value.trim();
+    let selectedClass = document.getElementById('classSelect').value;
     
+    if(!input) {
+        alert("Vui lòng dán code gốc vào ô trống trước!");
+        return;
+    }
+
     // Chuẩn hóa chuỗi đầu vào thành một mảng JSON hợp lệ để xử lý
-    // Thêm dấu ngoặc vuông nếu người dùng chưa nhập
     if (!input.startsWith('[')) {
         input = '[' + input;
     }
     if (!input.endsWith(']')) {
-        // Xóa dấu phẩy thừa ở cuối nếu có trước khi đóng ngoặc
         if (input.endsWith(',')) {
             input = input.slice(0, -1);
         }
         input = input + ']';
     }
     
-    // Sửa các key từ không có nháy thành có nháy kép để JSON.parse đọc được
+    // Sửa cấu trúc linh hoạt để JSON.parse có thể hiểu được (kể cả phẩy hoặc ngoặc kép)
     let cleanInput = input
         .replace(/([{,]\s*)(name)(\s*:)/g, '$1"name"$3')
         .replace(/([{,]\s*)(phone)(\s*:)/g, '$1"phone"$3');
@@ -84,17 +112,20 @@ function convertCode() {
         let outputArray = [];
         
         arrayData.forEach((item, index) => {
-            // Tự động tính toán số thứ tự (ví dụ: 01, 02, 03... 100)
+            // Tự động tạo số thứ tự (01, 02, 03, ...)
             let stt = String(index + 1).padStart(2, '0');
             
-            // Đổi cấu trúc thành dạng: id, ten, sdt
-            outputArray.push(`    { id: "hs_${stt}", ten: "${item.name}", sdt: "${item.phone}" }`);
+            // Tạo chuỗi ID theo định dạng: hs_TENLOP_STT (ví dụ: hs_SKY-KID_01)
+            let generatedId = `hs_${selectedClass}_${stt}`;
+            
+            // Xuất ra cấu trúc chuẩn bao gồm cả thuộc tính 'lop'
+            outputArray.push(`    { id: "${generatedId}", ten: "${item.name}", sdt: "${item.phone}", lop: "${selectedClass}" }`);
         });
         
-        // Xuất kết quả ra màn hình dưới dạng code mảng đẹp mắt
+        // Trả kết quả hoàn thiện ra màn hình
         document.getElementById('outputCode').value = "const dataHocSinh = [\n" + outputArray.join(",\n") + "\n];";
     } catch (e) {
-        alert("Lỗi: Định dạng dòng code bạn dán vào chưa chuẩn. Hãy chắc chắn các dấu ngoặc nhọn { } và dấu phẩy đặt đúng vị trí giống như mẫu của bạn.");
+        alert("Lỗi: Định dạng dòng code bạn dán vào chưa chuẩn.\nHãy chắc chắn các dấu ngoặc nhọn { } và dấu phẩy đặt đúng vị trí giống như mẫu.");
     }
 }
 </script>
