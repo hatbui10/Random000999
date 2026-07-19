@@ -3,132 +3,1322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ thêm ID và Lớp tự động</title>
+    <title>Đánh giá học viên</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f1f5f9;
-            margin: 0;
-            padding: 10px;
-            color: #212529;
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #050508; color: #e0e0e6; padding: 20px 8px; max-width: 600px; margin: 0 auto; }
+        
+        h2 { text-align: center; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; color: #00f0ff; text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); font-size: 1.4rem; }
+        h3 { color: #ff007f; text-shadow: 0 0 10px rgba(255, 0, 127, 0.5); font-size: 1.1rem; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* 📂 KHU VỰC TẢI FILE */
+        .upload-card { background: #0a0a14; border: 1px solid #ffd700; border-radius: 6px; padding: 15px 10px; margin-bottom: 15px; box-shadow: 0 0 10px rgba(255, 215, 0, 0.1); }
+        .upload-card p { font-size: 0.85rem; color: #aaa; text-align: center; margin-bottom: 12px; }
+        .btn-group-top { width: 100%; display: block; text-align: center; margin-bottom: 5px; }
+        
+        .custom-upload-btn { 
+            display: inline-block; width: 48%; background: transparent; border: 1px solid #00f0ff; color: #00f0ff; 
+            padding: 12px 5px; font-weight: bold; font-size: 0.85rem; border-radius: 25px; cursor: pointer; 
+            text-transform: uppercase; text-align: center; margin-right: 2%; box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
         }
-        .box {
+        .custom-upload-btn:active { background: #00f0ff; color: #000; }
+        
+        .btn-danger-top { 
+            display: inline-block; width: 48%; background: transparent; border: 1px solid #ff007f; color: #ff007f; 
+            padding: 12px 5px; font-weight: bold; font-size: 0.85rem; border-radius: 20px; cursor: pointer; 
+            text-transform: uppercase; text-align: center; box-shadow: 0 0 8px rgba(255, 0, 127, 0.2);
+        }
+        .btn-danger-top:active { background: #ff007f; color: #fff; }
+        .file-status { font-size: 0.85rem; color: #ffd700; text-align: center; margin-top: 12px; font-weight: bold; line-height: 1.3; }
+        
+        /* ⏳ PROGRESS BAR */
+        .progress-container { width: 100%; background-color: #050508; border: 1px solid #333; border-radius: 4px; margin: 10px 0; display: none; overflow: hidden; }
+        .progress-bar { width: 0%; height: 16px; background-color: #00ff66; text-align: center; line-height: 16px; color: #000; font-weight: bold; font-size: 0.75rem; transition: width 0.1s ease; box-shadow: 0 0 10px #00ff66; }
+
+        /* 🔍 KHU VỰC TÌM KIẾM HỌC VIÊN CHUNG */
+        .search-box { display: block; background: #0d0d1a; border: 1px solid #333; border-radius: 4px; padding: 10px; margin-bottom: 15px; text-align: center; }
+        .search-input { width: 73%; background: #050508; border: 1px solid #333; color: #fff; padding: 10px; font-size: 0.9rem; border-radius: 4px; outline: none; margin-right: 2%; display: inline-block; vertical-align: middle; }
+        .search-input:focus { border-color: #ffd700; }
+        .search-btn { width: 23%; background: #ffd700; color: #000; border: none; padding: 11px 0; font-weight: bold; font-size: 0.85rem; border-radius: 4px; cursor: pointer; text-transform: uppercase; display: inline-block; vertical-align: middle; }
+
+        /* 📊 KẾT QUẢ TÌM KIẾM TRÊN BẢNG */
+        .search-result-panel { background: #1a0813; border: 1px dashed #ff007f; border-radius: 4px; padding: 12px 8px; margin-bottom: 15px; display: none; }
+        .result-title { color: #ff007f; font-weight: bold; font-size: 0.9rem; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .result-table { width: 100%; border-collapse: collapse; }
+        .result-table th, .result-table td { border: 1px solid rgba(255, 0, 127, 0.2); padding: 8px 5px; text-align: left; font-size: 0.8rem; }
+        .result-table th { background-color: #4a0025; color: #fff; text-transform: uppercase; font-size: 0.75rem; }
+        .result-table tr:nth-child(even) { background-color: rgba(255, 0, 127, 0.03); }
+
+        /* 📦 KHỐI NHÓM LỚP */
+        .group-block-wrapper { margin-bottom: 20px; background: #04040a; border: 1px solid #ffd700; border-radius: 8px; overflow: hidden; box-shadow: 0 0 12px rgba(255, 215, 0, 0.05); }
+        .group-accordion-header { padding: 14px 12px; background: #111122; cursor: pointer; user-select: none; transition: background 0.2s; position: relative; border-bottom: 2px solid #ffd700; display: flex; justify-content: space-between; align-items: center; }
+        .group-accordion-header:active { background: #1c1c38; }
+        .group-accordion-header::after { content: '▼'; color: #ffd700; font-size: 0.9rem; transition: transform 0.3s; margin-left: 10px; }
+        .group-block-wrapper.active .group-accordion-header::after { content: '▲'; }
+        .group-main-title { color: #ffd700; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; text-shadow: 0 0 8px rgba(255, 215, 0, 0.2); }
+        .group-stats { color: #aaa; font-size: 0.85rem; font-weight: bold; }
+        .group-panel { padding: 12px 6px; display: none; background: #06060c; }
+        .group-block-wrapper.active .group-panel { display: block; }
+
+        /* 🏫 KHỐI GIAO DIỆN CHÍNH & ACCORDION LỚP CON */
+        .class-block-wrapper { margin-bottom: 12px; background: #0a0a14; border: 1px solid #333; border-radius: 6px; overflow: hidden; }
+        .class-accordion-header { padding: 12px 10px; background: #0d0d1f; cursor: pointer; user-select: none; transition: background 0.2s; position: relative; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .class-accordion-header:active { background: #151530; }
+        .class-accordion-header::after { content: '▼'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #00f0ff; font-size: 0.8rem; transition: transform 0.3s; }
+        .class-block-wrapper.active .class-accordion-header::after { content: '▲'; color: #00ff66; }
+        
+        .class-main-title { color: #00f0ff; text-shadow: 0 0 10px rgba(0, 240, 255, 0.3); font-size: 1.15rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .class-stats { text-align: left; color: #00ff66; font-size: 0.85rem; margin-top: 3px; font-weight: 500; }
+        
+        .class-panel { padding: 15px 8px; display: none; background: #0a0a14; }
+        .class-block-wrapper.active .class-panel { display: block; }
+        
+        .add-student-box { display: flex; flex-direction: column; gap: 8px; background: #0d0d1a; border: 1px solid #ffd700; border-radius: 4px; padding: 12px 10px; margin-bottom: 15px; }
+        .add-student-box input { width: 100%; background: #050508; border: 1px solid #333; color: #fff; padding: 10px; font-size: 0.9rem; border-radius: 4px; outline: none; }
+        .add-student-box input:focus { border-color: #ffd700; }
+        .btn-add { background: #ffd700; color: #000; border: none; padding: 10px; font-weight: bold; font-size: 0.9rem; border-radius: 4px; cursor: pointer; text-transform: uppercase; }
+        
+        .student-list { display: flex; flex-direction: column; gap: 10px; }
+        .student-card { border: 1px solid #333; border-left: 4px solid #ffd700; border-radius: 4px; padding: 12px 10px; display: flex; flex-direction: column; gap: 10px; transition: background 0.2s; cursor: pointer; position: relative; }
+        .student-card.highlight-search { border: 1px solid #ffd700 !important; box-shadow: 0 0 12px rgba(255, 215, 0, 0.4); }
+        
+        .student-info-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid #222; padding-bottom: 6px; }
+        .student-meta { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+        .student-name { font-weight: bold; font-size: 0.95rem; color: #fff; }
+        
+        .student-actions-right { display: flex; gap: 5px; width: 100%; justify-content: flex-end; }
+        .btn-delete { background: #4a0000; color: #ff3333; border: 1px solid #ff3333; padding: 8px 15px; font-size: 0.9rem; border-radius: 4px; cursor: pointer; }
+        
+        /* 🎓 CSS CHO NÚT TĂNG CẤP VÀ SAO ⭐ */
+        .btn-promote { background: #004d26; color: #00ff66; border: 1px solid #00ff66; padding: 8px 15px; font-size: 0.9rem; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-promote.is-promoted { background: #ffd700; color: #000; border: 1px solid #ffd700; }
+        .score-star { color: #ffd700; font-size: 1rem; margin-left: 6px; display: inline-block; animation: star-flash 1.5s infinite alternate; text-shadow: 0 0 5px #ffd700; }
+        @keyframes star-flash { 0% { opacity: 0.5; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1.1); } }
+
+        /* HIỂN THỊ CHI TIẾT KHI MỞ ACCORDION HỌC SINH */
+        .student-card .student-detail-panel { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #333; }
+        .student-card.active .student-detail-panel { display: block; }
+        .student-header-row { display: flex; justify-content: space-between; align-items: center; }
+        .student-arrow { color: #ffd700; font-size: 0.8rem; transition: transform 0.3s; }
+        .student-card.active .student-arrow { transform: rotate(180deg); }
+        
+        /* DANH SÁCH TIÊU CHÍ HÀNG DỌC */
+        /* DANH SÁCH TIÊU CHÍ - KHUNG CHỨA FLEXBOX CHUNG */
+        .eval-vertical-list { 
+            display: flex; 
+            flex-direction: column;      /* Chuyển sang dạng hàng ngang để xếp cạnh nhau */
+            flex-wrap: wrap;           /* Tự động xuống dòng khi hết chỗ */
+            gap: 12px 15px;            /* Khoảng cách giữa các tiêu chí (dưới - ngang) */
+            margin-top: 10px; 
+            background: #090911; 
+            padding: 12px 10px; 
+            border-radius: 4px; 
+            border: 1px solid #222; 
+        }
+
+        /* ĐỊNH DẠNG TỪNG TIÊU CHÍ DỰA TRÊN ĐỘ DÀI */
+        .eval-item { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 4px; 
+            padding-bottom: 4px;
+            flex-grow: 1;              /* Tự động kéo giãn để lấp đầy khoảng trống */
+            flex-shrink: 1; 
+            min-width: 140px;          /* Chiều rộng tối thiểu để không bị quá hẹp */
+        }
+
+        /* Các tiêu chí ngắn (Thường có độ dài ký tự ngắn, ví dụ: "Khả năng nói", "Khả năng nghe") 
+           Sẽ tự co giãn và chiếm khoảng một nửa hàng (ở màn hình lớn) */
+        .eval-item.short-item {
+            flex-basis: calc(50% - 15px); /* Ưu tiên chiếm 50% độ rộng dòng */
+        }
+
+        /* Các tiêu chí dài (Ví dụ: "Đề xuất của giáo viên", "Tình trạng tháng trước")
+           Sẽ luôn luôn chiếm trọn vẹn 100% dòng riêng biệt */
+        .eval-item.long-item {
+            flex-basis: 100%;             /* Luôn chiếm 100% độ rộng */
+        }
+
+        .eval-label { font-size: 0.8rem; color: #00f0ff; font-weight: bold; }
+        .note-select { background: #1a1a3a; color: #fff; border: 1px solid #555; padding: 8px; font-size: 0.85rem; border-radius: 4px; outline: none; width: 100%; }
+        .note-select:focus { border-color: #ffd700; }
+
+        /* 💾 NÚT XÁC NHẬN LƯU */
+        .btn-save-eval { background: #00ff66; color: #000; width: 100%; padding: 10px 0; margin-top: 12px; font-size: 0.9rem; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 8px rgba(0, 255, 102, 0.4); }
+        .btn-save-eval:active { background: #00cc52; }
+
+        /* ⏳ KHU VỰC LỊCH SỬ CHỈNH SỬA */
+        .btn-history { 
+            background: transparent; 
+            border: 1px solid #ffd700; 
+            color: #ffd700; 
+            width: 100%; 
+            padding: 8px 0; 
+            margin-top: 8px; 
+            font-size: 0.85rem; 
+            font-weight: bold; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+        }
+        .btn-history:active { 
+            background: #ffd700; 
+            color: #000; 
+        }
+
+        .history-panel { 
+            display: none; 
+            background: #020205; 
+            border: 1px solid #ff007f; 
+            padding: 8px; 
+            border-radius: 4px; 
+            margin-top: 8px; 
+        }
+        .history-panel.show { 
+            display: block; 
+        }
+
+        /* Cấu hình danh sách lịch sử có thanh cuộn */
+        .history-list { 
+            list-style: none; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 6px; 
+            max-height: 250px;       
+            overflow-y: scroll;      
+            padding-right: 5px;      
+        }
+
+        /* Tùy chỉnh thanh cuộn đẹp mắt theo phong cách Dark Mode */
+        .history-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .history-list::-webkit-scrollbar-track {
+            background: #0d0d1a; 
+            border-radius: 3px;
+        }
+        .history-list::-webkit-scrollbar-thumb {
+            background: #555; 
+            border-radius: 3px;
+        }
+        .history-list::-webkit-scrollbar-thumb:hover {
+            background: #ffd700;
+        }
+
+        .history-item { 
+            font-size: 0.75rem; 
+            border-bottom: 1px dashed #222; 
+            padding-bottom: 4px; 
+            line-height: 1.4; 
+            color: #ccc; 
+        }
+        .history-item:last-child { 
+            border-bottom: none; 
+        }
+
+        .history-user { 
+            color: #ff007f; 
+            font-weight: bold; 
+        }
+        .history-time { 
+            color: #888; 
+            font-style: italic; 
+            font-size: 0.7rem; 
+            float: right; 
+        }
+        .history-change { 
+            color: #00ff66; 
+        }
+
+        /* --- ĐỊNH NGHĨA NGÔI SAO NỀN (ĐÃ SỬA LỖI Z-INDEX) --- */
+        .star {
+            position: absolute;
+            width: 4px;        /* Tăng từ 2px lên 4px */
+            height: 4px;       /* Tăng từ 2px lên 4px */
             background: #fff;
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 10px;
+            border-radius: 50%;
+            z-index: 4; /* Nổi lên trên lớp nền */
+            pointer-events: none;
         }
-        h3 { margin-top: 0; color: #1a365d; font-size: 14px; text-transform: uppercase;}
-        textarea {
-            width: 100%;
-            height: 150px;
-            box-sizing: border-box;
-            padding: 8px;
-            font-family: monospace;
-            font-size: 11px;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            margin-bottom: 8px;
+        /* Các nhịp nhấp nháy đa dạng và nhanh hơn */
+        .twinkle-1 { animation: twinkle 1s infinite alternate; }
+        .twinkle-2 { animation: twinkle 1.8s infinite alternate-reverse; }
+        .twinkle-3 { animation: twinkle 1.2s infinite alternate; }
+
+        @keyframes twinkle {
+            0% { opacity: 0.1; transform: scale(0.6); }
+            100% { opacity: 1; transform: scale(1.4); box-shadow: 0 0 6px #ffffff, 0 0 10px #ffd700; }
         }
-        select {
-            width: 100%;
-            padding: 10px;
-            font-size: 13px;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            outline: none;
-            background-color: #f8fafc;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 8px;
+
+        /* --- ĐỊNH NGHĨA SAO BĂNG RƠI --- */
+        .shooting-star {
+            position: absolute;
+            z-index: 40; 
+            width: 100px;       /* Tăng chiều dài đuôi từ 60px lên 100px */
+            height: 3px;        /* Tăng độ dày vệt sáng từ 1.5px lên 3px */
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), transparent);
+            transform: rotate(-35deg);
+            pointer-events: none;
+            opacity: 0;
         }
-        button {
-            width: 100%;
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 10px;
-            font-weight: bold;
-            border-radius: 4px;
-            margin-top: 5px;
-            font-size: 13px;
-            cursor: pointer;
+
+        /* Cập nhật lại chiều dài đuôi sao băng xuất hiện trong các hiệu ứng chuyển động */
+        @keyframes meteor-fall-1 {
+            0% { top: -10%; left: 30%; opacity: 0; width: 0px; }
+            3% { opacity: 1; width: 100px; } /* Khớp với chiều dài 100px ở trên */
+            8% { top: 70%; left: -15%; opacity: 0; width: 0px; }
+            100% { top: 70%; left: -15%; opacity: 0; }
         }
-        button:active { background-color: #2563eb; }
+
+        @keyframes meteor-fall-2 {
+            0% { top: -10%; left: 65%; opacity: 0; width: 0px; }
+            3% { opacity: 1; width: 110px; } /* Cho sao băng này dài hơn một chút */
+            8% { top: 80%; left: 15%; opacity: 0; width: 0px; }
+            100% { top: 80%; left: 15%; opacity: 0; }
+        }
+
+        @keyframes meteor-fall-3 {
+            0% { top: -10%; left: 95%; opacity: 0; width: 0px; }
+            2% { opacity: 1; width: 120px; } /* Cho sao băng này dài nhất */
+            7% { top: 90%; left: 35%; opacity: 0; width: 0px; }
+            100% { top: 90%; left: 35%; opacity: 0; }
+        }
+
+        /* Cấu hình thời gian rơi dồn dập và so le nhau */
+        .meteor-1 {
+            top: -10%; left: 15%;
+            animation: meteor-fall-1 4s infinite linear;
+        }
+        .meteor-2 {
+            top: -10%; left: 45%;
+            animation: meteor-fall-2 5.5s infinite linear;
+            animation-delay: 1.2s;
+            background: linear-gradient(90deg, rgba(0, 240, 255, 0.9), transparent); /* Sao băng xanh cyan */
+        }
+        .meteor-3 {
+            top: -10%; left: 75%;
+            animation: meteor-fall-3 7s infinite linear;
+            animation-delay: 2.5s;
+            background: linear-gradient(90deg, rgba(255, 0, 127, 0.9), transparent); /* Sao băng hồng */
+        }
+        .meteor-4 {
+            top: -10%; left: 30%;
+            animation: meteor-fall-1 6s infinite linear;
+            animation-delay: 0.8s;
+            background: linear-gradient(90deg, rgba(255, 215, 0, 0.9), transparent); /* Sao băng vàng gold */
+        }
+        .meteor-5 {
+            top: -10%; left: 60%;
+            animation: meteor-fall-2 4.5s infinite linear;
+            animation-delay: 3s;
+        }
+        .meteor-6 {
+            top: -10%; left: 90%;
+            animation: meteor-fall-3 8s infinite linear;
+            animation-delay: 1.7s;
+            background: linear-gradient(90deg, rgba(0, 255, 102, 0.9), transparent); /* Sao băng xanh lá */
+        }
+
+        /* Hoạt ảnh rơi xé gió mượt mà tốc độ cao */
+        @keyframes meteor-fall-1 {
+            0% { top: -10%; left: 30%; opacity: 0; width: 0px; }
+            3% { opacity: 1; width: 70px; }
+            8% { top: 70%; left: -15%; opacity: 0; width: 0px; }
+            100% { top: 70%; left: -15%; opacity: 0; }
+        }
+
+        @keyframes meteor-fall-2 {
+            0% { top: -10%; left: 65%; opacity: 0; width: 0px; }
+            3% { opacity: 1; width: 75px; }
+            8% { top: 80%; left: 15%; opacity: 0; width: 0px; }
+            100% { top: 80%; left: 15%; opacity: 0; }
+        }
+
+        @keyframes meteor-fall-3 {
+            0% { top: -10%; left: 95%; opacity: 0; width: 0px; }
+            2% { opacity: 1; width: 80px; }
+            7% { top: 90%; left: 35%; opacity: 0; width: 0px; }
+            100% { top: 90%; left: 35%; opacity: 0; }
+        }
+
+        .starlight-container {
+            position: relative;
+            margin-bottom: 25px;
+            border-radius: 12px;
+            background: #06060c; /* Nền đen cũ */
+            padding: 30px;
+            overflow: hidden;
+            z-index: 1;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.1), inset 0 0 15px rgba(0, 240, 255, 0.05);
+        }
+
+        /* 🚨 HỆ THỐNG BÁO ĐỘNG CỰC MẠNH: ÉP ĐỔI NỀN ĐỎ & NHẤP NHÁY LIÊN TỤC */
+        .student-card.alarm-warning {
+            border: 2px solid #ff0055 !important;
+            border-left: 6px solid #ff0055 !important; /* Viền trái siêu dày nổi bật */
+            
+            /* Ép màu nền cố định sang đỏ sẫm */
+            background-color: #500015 !important; 
+            background: #FF1E1E !important;
+            
+           
+        }
+
+        /* Đổi màu chữ tên học sinh sang màu vàng sáng để nhìn cực rõ trên nền đỏ */
+        .student-card.alarm-warning .student-name {
+            color: #fffb00 !important;
+            text-shadow: 0 0 5px #ff0055 !important;
+        }
+
+        /* Đổi màu mũi tên góc phải sang màu hồng neon */
+        .student-card.alarm-warning .student-arrow {
+            color: #ff0055 !important;
+        }
+
+       
+
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h3>1. Cấu hình thông tin và dán code gốc:</h3>
-    
-    <label style="display:block; margin-bottom: 4px; font-weight: bold; color: #475569;">Chọn lớp gán cho danh sách này:</label>
-    <select id="classSelect">
-        <option value="SKY-KID">Lớp SKY-KID</option>
-        <option value="10A1">Lớp 10A1</option>
-        <option value="11B2">Lớp 11B2</option>
-    </select>
+<!-- Khung đăng nhập Sao Băng Rơi & Nền Sao Lấp Lánh Dày Đặc -->
+<div id="loginBox" class="starlight-container">
+    <!-- 15 Ngôi sao lấp lánh ở các tọa độ khác nhau -->
+    <div class="star twinkle-1" style="top: 10%; left: 15%;"></div>
+    <div class="star twinkle-2" style="top: 18%; left: 45%;"></div>
+    <div class="star twinkle-3" style="top: 25%; left: 80%;"></div>
+    <div class="star twinkle-1" style="top: 35%; left: 12%;"></div>
+    <div class="star twinkle-2" style="top: 42%; left: 65%;"></div>
+    <div class="star twinkle-3" style="top: 48%; left: 30%;"></div>
+    <div class="star twinkle-1" style="top: 55%; left: 88%;"></div>
+    <div class="star twinkle-2" style="top: 62%; left: 22%;"></div>
+    <div class="star twinkle-3" style="top: 70%; left: 75%;"></div>
+    <div class="star twinkle-1" style="top: 78%; left: 40%;"></div>
+    <div class="star twinkle-2" style="top: 85%; left: 10%;"></div>
+    <div class="star twinkle-3" style="top: 90%; left: 90%;"></div>
+    <div class="star twinkle-1" style="top: 5%; left: 60%;"></div>
+    <div class="star twinkle-2" style="top: 93%; left: 52%;"></div>
+    <div class="star twinkle-3" style="top: 30%; left: 95%;"></div>
 
-    <label style="display:block; margin-bottom: 4px; font-weight: bold; color: #475569;">Dán code gốc của bạn vào đây:</label>
-    <textarea id="inputCode" placeholder='{ name: "Nguyễn Giản Long Vũ", phone: "0989882688" },&#10;{ name: "Nguyễn An Như (Cún)", phone: "0964243909" },'></textarea>
-    
-    <button onclick="convertCode()">BẤM ĐỂ TỰ ĐỘNG THÊM ID & LỚP</button>
+    <!-- 6 Vệt sao băng với các màu sắc và quỹ đạo rơi đa dạng -->
+    <div class="shooting-star meteor-1"></div>
+    <div class="shooting-star meteor-2"></div>
+    <div class="shooting-star meteor-3"></div>
+    <div class="shooting-star meteor-4"></div>
+    <div class="shooting-star meteor-5"></div>
+    <div class="shooting-star meteor-6"></div>
+
+    <div class="starlight-content">
+        <h3 class="neon-title">
+            ĐÁNH GIÁ KẾT QUẢ HỌC TẬP HỌC SINH
+        </h3>
+        
+        <!-- Ô nhập tài khoản -->
+        <input id="username" placeholder="Tên đăng nhập" style="width:50%; display: block;padding:12px; margin: 8px auto; background: #050508; border: 2px solid #333; color: #fff; border-radius: 6px; outline: none; transition: all 0.3s; position: relative; z-index: 10;" onfocus="this.style.borderColor='#ffd700'; this.style.boxShadow='0 0 8px rgba(255, 215, 0, 0.3)';" onblur="this.style.borderColor='#333'; this.style.boxShadow='none';">
+        
+       
+        <!-- Ô mật khẩu chỉ nhỏ 50% so với hộp lớn, con mắt nằm gọn bên trong -->
+        <div style="position: relative; margin: 8px auto; width: 50%; z-index: 10;">
+            <input id="password" type="password" placeholder="Mật khẩu" style="width: 100%; padding: 12px; padding-right: 42px; background: #050508; border: 2px solid #333; color: #fff; border-radius: 6px; outline: none; transition: all 0.3s; display: block;" onfocus="this.style.borderColor='#00f0ff'; this.style.boxShadow='0 0 8px rgba(0, 240, 255, 0.3)';" onblur="this.style.borderColor='#333'; this.style.boxShadow='none';">
+            <span id="togglePasswordBtn" onclick="togglePasswordVisibility()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; display: flex; align-items: center; justify-content: center; user-select: none; transition: transform 0.2s;" onmousedown="this.style.transform='translateY(-50%) scale(0.95)'" onmouseup="this.style.transform='translateY(-50%) scale(1)'">
+                <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.4));">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </span>
+        </div>
+        
+        <!-- Nút đăng nhập bảo vệ với z-index: 20 để tránh va chạm Pointer-events của Sao Băng -->
+        <button class="btn-login animate-btn" style="width: 30%; display: block; margin: 15px auto 0 auto; padding: 12px; font-weight: bold; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1.5px; border-radius: 6px; background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; border: none; cursor: pointer; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); transition: all 0.3s; position: relative; z-index: 20;" onmouseover="this.style.filter='brightness(1.1)'; this.style.boxShadow='0 0 20px rgba(255, 215, 0, 0.6)';" onmouseout="this.style.filter='brightness(1)'; this.style.boxShadow='0 0 15px rgba(255, 215, 0, 0.4)';" onclick="loginSystem()">
+            ĐĂNG NHẬP 
+        </button>
+        <button onclick="loginWithGoogle()" style="width: 30%; display: block; margin: 15px auto 0 auto; padding: 12px; font-weight: bold; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1.5px; border-radius: 6px; background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; border: none; cursor: pointer; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); transition: all 0.3s; position: relative; z-index: 20;" onmouseover="this.style.filter='brightness(1.1)'; this.style.boxShadow='0 0 20px rgba(255, 215, 0, 0.6)';" onmouseout="this.style.filter='brightness(1)'; this.style.boxShadow='0 0 15px rgba(255, 215, 0, 0.4)';" onclick="loginSystem()">
+    Đăng nhập = Google
+</button>
+    </div>
 </div>
 
-<div class="box">
-    <h3>2. Kết quả thu được (Copy mã này dùng):</h3>
-    <textarea id="outputCode" readonly placeholder="Kết quả định dạng chuẩn sẽ hiển thị tại đây..."></textarea>
+<div id="mainApp" style="display:none;">
+
+    <div class="upload-card">
+        <div class="btn-group-top">
+            <label for="excelFileInput" class="custom-upload-btn">📂 Tải lên File Excel</label>
+            <input type="file" id="excelFileInput" accept=".xlsx, .xls" style="display:none;" onchange="startProcessingExcel(this)">
+            <button class="btn-danger-top" onclick="clearSystemCache()" style="display:none;">XÓA dữ liệu CŨ</button>
+        </div>
+        <div id="fileStatusMessage" class="file-status">Chưa có dữ liệu học viên. Vui lòng chọn tệp Excel.</div>
+    </div>
+
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar">0%</div>
+    </div>
+
+    <div class="search-box">
+        <input type="text" id="globalSearchInput" class="search-input" placeholder="Nhập tên hoặc số điện thoại..." onkeypress="handleSearchKeyPress(event)">
+        <button class="search-btn" onclick="searchGlobalStudent()">Tìm Kiếm</button>
+    </div>
+
+    <div id="searchResultBox" class="search-result-panel">
+        <div class="result-title">
+            <span>🔍 KẾT QUẢ TÌM KIẾM TOÀN HỆ THỐNG:</span>
+            <span id="resultCount" style="color:#ffd700;"></span>
+        </div>
+        <table class="result-table">
+            <thead>
+                <tr>
+                    <th>Họ và Tên</th>
+                    <th>Lớp Học</th>
+                </tr>
+            </thead>
+            <tbody id="resultTableBody"></tbody>
+        </table>
+    </div>
+
+    <div id="dynamicMainContainer">
+        <div class="empty-alert">Danh sách trống. Giao diện sẽ được sinh ra sau khi bạn nạp file Excel!</div>
+    </div>
+
 </div>
 
 <script>
-function convertCode() {
-    let input = document.getElementById('inputCode').value.trim();
-    let selectedClass = document.getElementById('classSelect').value;
+const targetSheets = ["SV", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "DH25", "DH26"];
+const users = {
+    "admin": { "password": "1", "name": "Quản trị" },
+    "khanhly": { "password": "1", "name": "Mai Khánh Ly" },
+    "haan": { "password": "1", "name": "Nguyễn Hà An" },
+    "thanhtan": { "password": "1", "name": "Phạm Thị Thanh Tân" },
+    "thiphuong": { "password": "1", "name": "Nguyễn Thị Phương" },
+    "hongnhung": { "password": "1", "name": "Lê Hồng Nhung" },
+    "tramy": { "password": "1", "name": "Đỗ Trà My" },
+    "thanhthao": { "password": "1", "name": "Nguyễn Thanh Thảo" },
+    "thuha": { "password": "1", "name": "Nguyễn Thu Hà B" },
+    "thuphuong": { "password": "1", "name": "Nguyễn Thu Phương" },
+    "thuhang": { "password": "1", "name": "Ngô Thị Thu Hằng" },
+    "minhphuong": { "password": "1", "name": "Lê Minh Phương" },
+    "nhumai": { "password": "1", "name": "Nguyễn Như Mai" },
+    "hoangyen": { "password": "1", "name": "Hoàng Yến" }
+};
+
+
+const dropdownConfig = {
+    "Trong giờ học": {
+        "Đánh giá ngữ pháp": ["", "Xuất sắc 9-10", "Khá 7-8", "Trung bình 5-6", "Dưới 5", "Mất gốc (1-2)"],
+        "Đánh giá khả năng nói": ["", "A", "B", "C", "D"],
+        "Đánh giá khả năng nghe": ["", "A", "B", "C", "D"],
+        "Ý thức giờ học": ["", "Ngoan", "Thỉnh thoảng nói chuyện", "Nghịch nhưng cô nhắc vẫn nghe", "Tăng động"],
+        " Tâm lý học sinh": ["", "Thoải mái, vui vẻ", "Chán học muốn nghỉ", "Không chơi với ai", "Rụt rè ít nói"]
+      
+    },
+    "Ý thức ôn bài ở nhà": {
+         "Thuộc từ mới": ["", "Tốt", "Khá", "Trung bình", "Yếu"],
+         "Ý thức làm BTVN": ["", "Làm và ôn bài đầy đủ", "Có buổi làm, có buổi thiếu", "Thường xuyên không làm", "Không bao giờ làm"],
+        "Thuộc ngữ pháp": ["", "Thuộc và biết cách áp dụng công thức", "Hiểu nhưng vẫn còn chưa vững...", "Gặp khó khăn...", "Không hiểu..."]
+    },
     
-    if(!input) {
-        alert("Vui lòng dán code gốc vào ô trống trước!");
+    "Nhóm Đánh Giá Chung": {
+        "So với tháng trước": ["", "Tiến bộ nhanh", "Tiến bộ chậm", "Như cũ", "Kém đi", "Báo động"],
+        "Đề xuất của giáo viên": ["", "Có thể học vượt lớp", "Giữ nguyên", "GV Không thể dạy được", "Hà Vi không nên nhận dạy HS"]
+    }
+};
+
+let bigClassesDatabase = {};
+let currentUser = "Ẩn danh";
+
+function createSafeId(str) {
+    if (!str) return "";
+    return str.toString()
+              .replace(/[^a-zA-Z0-9]/g, '_') 
+              .replace(/__+/g, '_');         
+}
+
+function displayPhone(p) { 
+    if(!p || p === 'Chưa có' || p === 'undefined') return 'Chưa có';
+    let c = p.toString().replace(/\s+/g, ''); 
+    if(c.length === 10) return c.substring(0,4) + ' ' + c.substring(4,7) + ' ' + c.substring(7);
+    return p; 
+}
+
+function loginSystem() {
+    const u = document.getElementById("username").value.trim();
+    const p = document.getElementById("password").value.trim();
+    if (users[u] && users[u].password === p) {
+        currentUser = users[u].name;
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("mainApp").style.display = "block";
+        renderFullSystemUI();
+        updateUIReadOnlyState(); // <--- THÊM DÒNG NÀY VÀO
+        alert("✅ Đăng nhập thành công\nXin chào " + currentUser);
+    } else {
+        alert("❌ Sai tài khoản hoặc mật khẩu");
+        document.getElementById("password").value = "";
+        document.getElementById("password").focus();
+    }
+}
+
+
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById("password");
+    const eyeIcon = document.getElementById("eyeIcon");
+
+    if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        // Vẽ thêm đường gạch chéo xuyên qua con mắt (con mắt bị gạch chéo)
+        eyeIcon.innerHTML = `
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+        `;
+    } else {
+        passwordInput.type = "password";
+        // Trả lại hình con mắt mở bình thường
+        eyeIcon.innerHTML = `
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+        `;
+    }
+}
+
+
+window.onload = async function () {
+    try {
+        if (typeof window.loadFromFirebase === 'function') {
+            await window.loadFromFirebase();
+        } else {
+            const cachedData = localStorage.getItem("big_classes_database");
+            if (cachedData) { bigClassesDatabase = JSON.parse(cachedData); }
+        }
+    } catch (e) {
+        const cachedData = localStorage.getItem("big_classes_database");
+        if (cachedData) { bigClassesDatabase = JSON.parse(cachedData); }
+    }
+    document.getElementById("mainApp").style.display = "none";
+    document.getElementById("loginBox").style.display = "block";
+};
+
+function startProcessingExcel(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    document.getElementById('fileStatusMessage').style.color = "#ffd700";
+    document.getElementById('fileStatusMessage').innerText = `Đang xử lý tệp: ${file.name}...`;
+    document.getElementById('searchResultBox').style.display = 'none';
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    progressContainer.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressBar.innerText = '0%';
+
+    const oldDatabase = JSON.parse(JSON.stringify(bigClassesDatabase));
+    bigClassesDatabase = {};
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetsToProcess = workbook.SheetNames.filter(name => targetSheets.includes(name.trim()));
+            
+            if (sheetsToProcess.length === 0) {
+                alert("Không tìm thấy các sheet mục tiêu trong file Excel!");
+                progressContainer.style.display = 'none';
+                return;
+            }
+
+            let totalSheets = sheetsToProcess.length;
+            let currentSheetIdx = 0;
+
+            async function parseSheetStep() {
+                if (currentSheetIdx >= totalSheets) {
+                    progressBar.style.width = '100%';
+                    progressBar.innerText = '100% Hoàn thành';
+                    
+                    let totalStudentsCount = 0;
+                    Object.keys(bigClassesDatabase).forEach(classKey => {
+                        totalStudentsCount += bigClassesDatabase[classKey].students.length;
+                    });
+                    document.getElementById('fileStatusMessage').style.color = "#00ff66";
+                    document.getElementById('fileStatusMessage').innerText = `✅ Nạp thành công! Tìm thấy ${totalStudentsCount} học viên.`;
+                    
+                    localStorage.setItem('big_classes_database', JSON.stringify(bigClassesDatabase));
+                    localStorage.setItem('big_classes_filename', file.name);
+                    
+                    await saveDatabaseState();
+                    renderFullSystemUI();
+                    return;
+                }
+
+                let percent = Math.round((currentSheetIdx / totalSheets) * 100);
+                progressBar.style.width = percent + '%';
+                progressBar.innerText = percent + '%';
+
+                const sheetName = sheetsToProcess[currentSheetIdx];
+                const sheet = workbook.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+                
+                if (rows.length > 0) {
+                    const colAIndex = 0;
+                    const colBIndex = 1;
+                    const colPIndex = 16;
+                    let detectedClassName = "";
+                    let detectedSchedule = "";
+                    let previousText = "";
+                    let readingStudents = false;
+
+                    rows.forEach((row) => {
+                        if (!row) return;
+                        let cellB = row[colBIndex] ? row[colBIndex].toString().trim() : "";
+                        let cellP = row[colPIndex] ? row[colPIndex].toString().trim() : "";
+                        let cellB_lower = cellB.toLowerCase();
+                        let cleanPhone = cellP.replace(/[^0-9]/g, "");
+                    
+                        if (cleanPhone.length === 9 && !cleanPhone.startsWith("0")) { cleanPhone = "0" + cleanPhone; }
+                        if (cellB === "" || cellB_lower === "tên học sinh" || cellB_lower === "tên hs" || cellB_lower === "họ và tên") return;
+
+                        const isSchedule = /^t[2-7]/i.test(cellB) || /^cn/i.test(cellB) || /18h|19h|20h/i.test(cellB) || cellB.includes("THỨ");
+                        if (isSchedule) {
+                            if (previousText) detectedClassName = previousText;
+                            detectedSchedule = cellB;
+                            readingStudents = true;
+                            return;
+                        }
+
+                        if (readingStudents) {
+                            if (cellB && !/^\d+$/.test(cellB) && cleanPhone.length >= 9 && cleanPhone.length <= 11) {
+                                let currentClassKey = detectedClassName;
+                                if (!bigClassesDatabase[currentClassKey]) {
+                                    bigClassesDatabase[currentClassKey] = { sheet: sheetName, schedule: detectedSchedule, students: [] };
+                                }
+                                
+                                const nextStudentId = bigClassesDatabase[currentClassKey].students.length + 1;
+                                
+                                let targetStudent = {
+                                    id: nextStudentId,
+                                    name: cellB,
+                                    phone: cleanPhone,
+                                    isPromoted: false, // Thêm trạng thái tăng cấp cho học viên
+                                    history: []
+                                };
+
+                                // Khởi tạo các tiêu chí đánh giá đúng theo cấu hình dropdownConfig thực tế
+                                for (let key in dropdownConfig) { 
+                                    targetStudent[`eval_${key}`] = ""; 
+                                }
+
+                                if (oldDatabase[currentClassKey]) {
+                                    const matchedOldStudent = oldDatabase[currentClassKey].students.find(
+                                        s => s.name.trim().toLowerCase() === cellB.toLowerCase() && s.phone === cleanPhone
+                                    );
+                                    if (matchedOldStudent) {
+                                        // Giữ lại lịch sử chỉnh sửa
+                                        targetStudent.history = matchedOldStudent.history || [];
+                                        targetStudent.isPromoted = matchedOldStudent.isPromoted || false;
+                                        // Khôi phục chính xác các đánh giá cũ theo tên tiêu chí tiếng Việt
+                                        for (let key in dropdownConfig) {
+                                            targetStudent[`eval_${key}`] = matchedOldStudent[`eval_${key}`] || "";
+                                        }
+                                    }
+                                }
+
+                                bigClassesDatabase[currentClassKey].students.push(targetStudent);
+                                return;
+                            }
+                            if (cellB && cleanPhone.length < 9) {
+                                readingStudents = false;
+                                previousText = cellB;
+                                return;
+                            }
+                            return;
+                        }
+                        if (cellB && cleanPhone.length < 9) previousText = cellB;
+                    });
+                }
+                currentSheetIdx++;
+                setTimeout(parseSheetStep, 10);
+            }
+            parseSheetStep();
+        } catch (err) {
+            console.error(err);
+            alert("Lỗi khi đọc dữ liệu từ file Excel!");
+            document.getElementById('progressContainer').style.display = 'none';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function toggleClassAccordion(headerElement) { headerElement.parentElement.classList.toggle('active'); }
+function toggleGroupAccordion(headerElement) { headerElement.parentElement.classList.toggle('active'); }
+function toggleStudentAccordion(cardId) { const card = document.getElementById(cardId); if (card) card.classList.toggle('active'); }
+
+function toggleHistoryPanel(event, panelId) {
+    event.stopPropagation();
+    const panel = document.getElementById(panelId);
+    if(panel) panel.classList.toggle('show');
+}
+
+function getGroupKeyBySheet(sheetName) {
+    const s = sheetName.trim();
+    if (["2", "3", "4", "5"].includes(s)) return { key: "TIEU_HOC", name: "Lớp 2->5" };
+    if (["6", "7", "8", "9"].includes(s)) return { key: "THCS", name: "Lớp 6->9" };
+    if (["10", "11", "12"].includes(s)) return { key: "THPT", name: "Lớp 10->12" };
+    if (["DH25", "DH26"].includes(s)) return { key: "DAI_HOC", name: "Khối Đại Học (DH25-26)" };
+    return { key: "KHAC", name: "Sinh Viên" };
+}
+
+function renderFullSystemUI() {
+    const mainContainer = document.getElementById("dynamicMainContainer");
+    mainContainer.innerHTML = "";
+    const classKeys = Object.keys(bigClassesDatabase);
+    if (classKeys.length === 0) {
+        mainContainer.innerHTML = '<div class="empty-alert">Danh sách trống. Giao diện sẽ được sinh ra sau khi nạp file Excel.</div>';
         return;
     }
 
-    // Chuẩn hóa chuỗi đầu vào thành một mảng JSON hợp lệ để xử lý
-    if (!input.startsWith('[')) {
-        input = '[' + input;
-    }
-    if (!input.endsWith(']')) {
-        if (input.endsWith(',')) {
-            input = input.slice(0, -1);
+    classKeys.sort((a, b) => {
+        const order = ["SV","2","3","4","5","6","7","8","9","10","11","12","DH25","DH26"];
+        const ia = order.indexOf(bigClassesDatabase[a].sheet);
+        const ib = order.indexOf(bigClassesDatabase[b].sheet);
+        if (ia !== ib) return ia - ib;
+        return a.localeCompare(b, "vi");
+    });
+
+    const groupedData = {
+        "TIEU_HOC": { name: "Lớp 2-> Lớp5", classes: [], totalStudents: 0 },
+        "THCS": { name: "Lớp 6-> Lớp 9", classes: [], totalStudents: 0 },
+        "THPT": { name: "Lớp 10-> Lớp 12", classes: [], totalStudents: 0 },
+        "DAI_HOC": { name: "Khối Đại Học", classes: [], totalStudents: 0 },
+        "KHAC": { name: "Khối SV", classes: [], totalStudents: 0 }
+    };
+
+    classKeys.forEach(classKey => {
+        const classObj = bigClassesDatabase[classKey];
+        const groupInfo = getGroupKeyBySheet(classObj.sheet);
+        groupedData[groupInfo.key].classes.push({ key: classKey, data: classObj });
+        groupedData[groupInfo.key].totalStudents += classObj.students.length;
+    });
+
+    const groupOrder = ["TIEU_HOC", "THCS", "THPT", "DAI_HOC", "KHAC"];
+    groupOrder.forEach(gKey => {
+        const group = groupedData[gKey];
+        if (group.classes.length === 0) return; 
+
+        const groupSection = document.createElement("div");
+        groupSection.className = "group-block-wrapper";
+        groupSection.id = `group-wrapper-${gKey}`;
+        groupSection.innerHTML = `
+            <div class="group-accordion-header" onclick="toggleGroupAccordion(this)">
+                <div class="group-main-title">${group.name}</div>
+            </div>
+            <div class="group-panel" id="group-panel-${gKey}"></div>
+        `;
+        mainContainer.appendChild(groupSection);
+        const groupPanel = groupSection.querySelector(".group-panel");
+
+        group.classes.forEach(cls => {
+            const classKey = cls.key;
+            const classObj = cls.data;
+            const classIdStr = createSafeId(classKey);
+            
+            const classSection = document.createElement("div");
+            classSection.className = "class-block-wrapper";
+            classSection.setAttribute("data-classname-box", classKey);
+            
+            const alarmStudents = classObj.students.filter(s => checkStudentAlarmState(s)).length;
+            const promotedStudents = classObj.students.filter(s => s.isPromoted || s["eval_Đánh giá ngữ pháp"] === "Xuất sắc 9-10").length;
+
+            classSection.innerHTML = `
+                <div class="class-accordion-header" onclick="toggleClassAccordion(this)">
+                    <div class="class-main-title">Lớp: ${classKey}</div>
+                    <div class="class-schedule">${classObj.schedule || ""}</div>
+                    <div class="class-stats" id="stats-${classIdStr}">
+                        Sĩ số: ${classObj.students.length} | 🚨 Báo động: <span style="color: white ;">${alarmStudents}</span> | 🎓 Tăng cấp: <span style="color: #00ffaa; font-weight: bold;">${promotedStudents}</span>
+                    </div>
+                </div>
+                <div class="class-panel">
+                    <h3>Danh Sách Chi Tiết</h3><br>
+                    <div class="add-student-box" hidden>
+                        <input type="text" id="inputName-${classIdStr}" placeholder="Nhập họ và tên học sinh mới..." hidden>
+                        <button class="btn-add" onclick="addNewStudentToClass('${classKey}')" hidden>+ Thêm học sinh</button>
+                    </div>
+                    <div class="student-list" id="studentList-${classIdStr}">
+                        ${renderStudentCardsHtml(classKey, classObj.students)}
+                    </div>
+                </div>
+            `;
+            groupPanel.appendChild(classSection);
+        });
+    });
+    updateUIReadOnlyState();
+}
+
+function renderStudentCardsHtml(classKey, students) {
+    return students.map((student, idx) => {
+        const classIdStr = createSafeId(classKey);
+        const cardId = `card-${classIdStr}-${student.id}`;
+        const historyPanelId = `history-${classIdStr}-${student.id}`;
+
+
+
+
+       // --- ĐOẠN CODE CẦN THAY THẾ BẮT ĐẦU TỪ ĐÂY ---
+        let dropdownsHtml = "";
+        let count = 1;
+
+        // Duyệt qua từng nhóm trong cấu trúc config mới
+        for (let groupName in dropdownConfig) {
+            dropdownsHtml += `<div class="group-title" style="margin-top:15px; border-bottom:1px solid #444; padding-bottom:5px; color:#ffd700; font-weight:bold; font-size: 0.9rem;">${groupName}</div>`;
+            
+            // Duyệt qua các tiêu chí trong nhóm đó
+            for (let criterion in dropdownConfig[groupName]) {
+                let options = dropdownConfig[groupName][criterion];
+                let currentSelected = student[`eval_${criterion}`] || "";
+                
+                let optionsHtml = options.map(opt => `
+                    <option value="${opt}" ${opt === currentSelected ? 'selected' : ''}>${opt === "" ? "-- Trống --" : opt}</option>
+                `).join('');
+
+                const itemClass = criterion.length > 25 ? 'long-item' : 'short-item';
+
+                dropdownsHtml += `
+                    <div class="eval-item ${itemClass}">
+                        <span class="eval-label">${count}. ${criterion}:</span>
+                        <select class="note-select" data-eval-idx="${criterion}">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                `;
+                count++;
+            }
         }
-        input = input + ']';
+        // --- KẾT THÚC ĐOẠN THAY THẾ ---
+
+
+
+
+        let historyItemsHtml = '<li class="history-item" style="text-align:center;color:#666;">Chưa có lịch sử chỉnh sửa</li>';
+        if (student.history && student.history.length > 0) {
+            historyItemsHtml = student.history.slice().reverse().map(h => `
+                <li class="history-item">
+                    <span class="history-user">${h.user}</span>:${h.index} 
+                    <span class="history-change">"${h.old || 'Trống'}" ➜ "${h.new || 'Trống'}"</span>
+                    <span class="history-time">${h.time}</span>
+                </li>
+            `).join('');
+        }
+
+        // Gọi hàm kiểm tra xem học sinh này có bị báo động đỏ không
+        const isAlarm = checkStudentAlarmState(student);
+        const alarmClass = isAlarm ? "alarm-warning" : "";
+
+        // Kiểm tra xem Đánh giá ngữ pháp có ổnlà "Xuất sắc 9-10" hay không để hiển thị ngôi sao
+        const isExcellent = student["eval_Đánh giá ngữ pháp"] === "Xuất sắc 9-10";
+        const starMarkup = isExcellent ? `<span class="score-star" title="9-10 điểm ngữ pháp">⭐</span>` : '';
+
+        // Tối ưu hóa giao diện nút thăng cấp và gán class hoạt động
+        const isPromoted = student.isPromoted || false;
+        const promoteBtnText = isPromoted ? "Đã tăng cấp" : "Tăng cấp";
+        const promoteBtnClass = isPromoted ? "btn-promote is-promoted" : "btn-promote";
+
+        return `
+            <div class="student-card ${alarmClass}" id="${cardId}" onclick="toggleStudentAccordion('${cardId}')">
+                <div class="student-header-row">
+                    <div class="student-meta">
+                        <span class="student-name">${idx + 1}. ${student.name}${starMarkup}</span>
+                    </div>
+                    <span class="student-arrow">▼</span>
+                </div>
+                
+                <div class="student-detail-panel" onclick="event.stopPropagation();">
+                    <div class="student-info-row" style="border: none; padding: 0; margin-bottom: 5px;">
+                        <div class="student-actions-right">
+                            <button class="${promoteBtnClass}" onclick="promoteStudent('${classKey}', ${student.id})" hidden>${promoteBtnText}</button>
+                            <button class="btn-delete" onclick="deleteStudentFromClass('${classKey}', ${student.id}, '${student.name.replace(/'/g, "\\'")}')" hidden>Xoá học sinh</button>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.85rem; color: #ffd700; margin-top: 5px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 5px;">CÁC TIÊU CHÍ ĐÁNH GIÁ</div>
+                    <div class="eval-vertical-list">
+                        ${dropdownsHtml}
+                    </div>
+
+                    <button class="btn-save-eval" onclick="saveStudentEvaluationChanges('${classKey}', ${student.id})">💾 Xác nhận thay đổi</button>
+
+                    <button class="btn-history" onclick="toggleHistoryPanel(event, '${historyPanelId}')">⏳ Xem lịch sử </button>
+                    <div class="history-panel" id="${historyPanelId}">
+                        <ul class="history-list">
+                            ${historyItemsHtml}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Logic cập nhật thăng hạng học viên
+function promoteStudent(classKey, studentId) {
+    let student = bigClassesDatabase[classKey].students.find(s => s.id === studentId);
+    if (!student) return;
+
+    student.isPromoted = !student.isPromoted; // Đảo trạng thái tăng cấp
+
+    let now = new Date();
+    let timeStr = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+    
+    if (!student.history) student.history = [];
+    student.history.push({
+        user: currentUser,
+        index: "Tăng cấp lớp học",
+        old: !student.isPromoted ? "Được tăng cấp" : "Hủy tăng cấp",
+        new: student.isPromoted ? "Được tăng cấp" : "Hủy tăng cấp",
+        time: timeStr
+    });
+
+    saveDatabaseState();
+
+    // Cập nhật giao diện thống kê của Lớp
+    const classIdStr = createSafeId(classKey);
+    const alarmStudents = bigClassesDatabase[classKey].students.filter(s => checkStudentAlarmState(s)).length;
+    const promotedStudents = bigClassesDatabase[classKey].students.filter(s => s.isPromoted).length;
+    const statsElem = document.getElementById(`stats-${classIdStr}`);
+    if (statsElem) {
+        statsElem.innerHTML = `Sĩ số: ${bigClassesDatabase[classKey].students.length} | 🚨 Báo động: <span style="color: white ;">${alarmStudents}</span> | 🎓 Tăng cấp: <span style="color: #00ffaa; font-weight: bold;">${promotedStudents}</span>`;
+    }
+
+    // Load lại danh sách học sinh của lớp đó
+    const studentListContainer = document.getElementById(`studentList-${classIdStr}`);
+    if (studentListContainer) {
+        studentListContainer.innerHTML = renderStudentCardsHtml(classKey, bigClassesDatabase[classKey].students);
     }
     
-    // Sửa cấu trúc linh hoạt để JSON.parse có thể hiểu được (kể cả phẩy hoặc ngoặc kép)
-    let cleanInput = input
-        .replace(/([{,]\s*)(name)(\s*:)/g, '$1"name"$3')
-        .replace(/([{,]\s*)(phone)(\s*:)/g, '$1"phone"$3');
+    alert(`🎉 Đã cập nhật trạng thái tăng cấp cho [${student.name}]!`);
+}
 
-    try {
-        let arrayData = JSON.parse(cleanInput);
-        let outputArray = [];
-        
-        arrayData.forEach((item, index) => {
-            // Tự động tạo số thứ tự (01, 02, 03, ...)
-            let stt = String(index + 1).padStart(2, '0');
-            
-            // Tạo chuỗi ID theo định dạng: hs_TENLOP_STT (ví dụ: hs_SKY-KID_01)
-            let generatedId = `hs_${selectedClass}_${stt}`;
-            
-            // Xuất ra cấu trúc chuẩn bao gồm cả thuộc tính 'lop'
-            outputArray.push(`    { id: "${generatedId}", ten: "${item.name}", sdt: "${item.phone}", lop: "${selectedClass}" }`);
-        });
-        
-        // Trả kết quả hoàn thiện ra màn hình
-        document.getElementById('outputCode').value = "const dataHocSinh = [\n" + outputArray.join(",\n") + "\n];";
-    } catch (e) {
-        alert("Lỗi: Định dạng dòng code bạn dán vào chưa chuẩn.\nHãy chắc chắn các dấu ngoặc nhọn { } và dấu phẩy đặt đúng vị trí giống như mẫu.");
+function saveStudentEvaluationChanges(classKey, studentId) {
+    let student = bigClassesDatabase[classKey].students.find(s => s.id === studentId); 
+    if (!student) return; 
+
+    const classIdStr = createSafeId(classKey);
+    const cardElement = document.getElementById(`card-${classIdStr}-${studentId}`);
+    if (!cardElement) return;
+
+    const selectElements = cardElement.querySelectorAll('select[data-eval-idx]');
+    let hasChanges = false;
+    let now = new Date();
+    let timeStr = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+
+    if (!student.history) student.history = [];
+
+    selectElements.forEach(select => {
+        const evalIndex = select.getAttribute('data-eval-idx');
+        const newValue = select.value;
+        const oldValue = student[`eval_${evalIndex}`] || "";
+
+        if (oldValue !== newValue) {
+            hasChanges = true;
+            student.history.push({
+                user: currentUser,
+                index: evalIndex,
+                old: oldValue,
+                new: newValue,
+                time: timeStr
+            });
+            student[`eval_${evalIndex}`] = newValue;
+        }
+    });
+
+    if (hasChanges) {
+        if (student.history.length > 100) {
+            student.history = student.history.slice(-100);
+        }
+
+        saveDatabaseState();
+
+        // Thêm đoạn này sau khi đã lưu xong database để cập nhật lại chỉ số báo động và tăng cấp lớp
+        const alarmStudents = bigClassesDatabase[classKey].students.filter(s => checkStudentAlarmState(s)).length;
+        const promotedStudents = bigClassesDatabase[classKey].students.filter(s => s.isPromoted).length;
+        const statsElem = document.getElementById(`stats-${classIdStr}`);
+        if (statsElem) {
+            statsElem.innerHTML = `Sĩ số: ${bigClassesDatabase[classKey].students.length} | 🚨 Báo động: <span style="color: white ;">${alarmStudents}</span> | 🎓 Tăng cấp: <span style="color: #00ffaa; font-weight: bold;">${promotedStudents}</span>`;
+        }
+
+        // Gọi hàm kiểm tra và cập nhật viền báo động đỏ lên màn hình ngay lập tức
+        const isAlarmNow = checkStudentAlarmState(student);
+        if (isAlarmNow) {
+            cardElement.classList.add("alarm-warning");
+        } else {
+            cardElement.classList.remove("alarm-warning");
+        }
+
+        // Cập nhật lại danh sách để áp dụng việc hiển thị Ngôi Sao nếu Đánh giá ngữ pháp đổi sang Xuất sắc 9-10
+        const studentListContainer = document.getElementById(`studentList-${classIdStr}`);
+        if (studentListContainer) {
+            studentListContainer.innerHTML = renderStudentCardsHtml(classKey, bigClassesDatabase[classKey].students);
+        }
+
+        alert(`💾 Đã cập nhật và lưu đánh giá cho học viên [${student.name}] thành công!`);
+    } else {
+        alert("Thông báo: Bạn chưa thực hiện thay đổi tiêu chí nào.");
     }
+}
+
+
+
+
+function checkStudentAlarmState(student) {
+    // Liệt kê chính xác tên các tiêu chí muốn báo động vào đây
+    const criteriaToWatch = [
+        "Đánh giá ngữ pháp", 
+        "Tâm lý học sinh",
+"Đề xuất giáo viên", 
+        "Ý thức giờ học"
+    ];
+
+    for (let groupName in dropdownConfig) {
+        for (let key in dropdownConfig[groupName]) {
+            // Chỉ kiểm tra nếu tiêu chí này nằm trong danh sách cần theo dõi
+            if (criteriaToWatch.includes(key)) {
+                const options = dropdownConfig[groupName][key];
+                const currentValue = student[`eval_${key}`] || "";
+                
+                // Logic: Nếu chọn vào các phương án từ vị trí thứ 3 trở đi (index >= 2 hoặc 3 tùy bạn)
+                // Ví dụ: index 3 thường là "Dưới 5" hoặc "Thường xuyên không làm"
+                if (options.indexOf(currentValue) >= 4) return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+function addNewStudentToClass(classKey) { 
+    const classIdStr = createSafeId(classKey); 
+    const nameInput = document.getElementById(`inputName-${classIdStr}`); 
+    const name = nameInput.value.trim(); 
+    if (name === '') { alert('Vui lòng nhập tên học viên!'); return; } 
+    
+    const studentsList = bigClassesDatabase[classKey].students; 
+    const nextId = studentsList.length > 0 ? Math.max(...studentsList.map(s => s.id)) + 1 : 1; 
+    
+    let newStudent = { id: nextId, name: name, phone: "Chưa có", isPromoted: false, history: [] };
+    
+    // Khởi tạo các tiêu chí tiếng Việt chuẩn theo cấu hình dropdownConfig
+    for (let key in dropdownConfig) { 
+        newStudent[`eval_${key}`] = ""; 
+    }
+    
+    studentsList.push(newStudent); 
+    saveDatabaseState(); 
+    nameInput.value = ''; 
+    
+    const alarmStudents = studentsList.filter(s => checkStudentAlarmState(s)).length;
+    const promotedStudents = studentsList.filter(s => s.isPromoted).length;
+    document.getElementById(`stats-${classIdStr}`).innerHTML = `Sĩ số: ${studentsList.length} | 🚨 Báo động: <span style="color: white ;">${alarmStudents}</span> | 🎓 Tăng cấp: <span style="color: #00ffaa; font-weight: bold;">${promotedStudents}</span>`; 
+    document.getElementById(`studentList-${classIdStr}`).innerHTML = renderStudentCardsHtml(classKey, studentsList); 
+    updateGroupStatsText(bigClassesDatabase[classKey].sheet); 
+}
+
+
+function deleteStudentFromClass(classKey, studentId, studentName) { 
+    if (confirm(`Bạn có chắc chắn muốn XÓA học sinh [${studentName}]?`)) { 
+        const targetSheet = bigClassesDatabase[classKey].sheet; 
+        bigClassesDatabase[classKey].students = bigClassesDatabase[classKey].students.filter(s => s.id !== studentId); 
+        bigClassesDatabase[classKey].students.forEach((s, idx) => { s.id = idx + 1; }); 
+        
+        saveDatabaseState(); 
+        const classIdStr = createSafeId(classKey); 
+        const studentsList = bigClassesDatabase[classKey].students; 
+        
+        const alarmStudents = studentsList.filter(s => checkStudentAlarmState(s)).length;
+        const promotedStudents = studentsList.filter(s => s.isPromoted).length;
+        document.getElementById(`stats-${classIdStr}`).innerHTML = `Sĩ số: ${studentsList.length} | 🚨 Báo động: <span style="color: white ;">${alarmStudents}</span> | 🎓 Tăng cấp: <span style="color: #00ffaa; font-weight: bold;">${promotedStudents}</span>`; 
+        document.getElementById(`studentList-${classIdStr}`).innerHTML = renderStudentCardsHtml(classKey, studentsList); 
+        updateGroupStatsText(targetSheet); 
+    } 
+}
+
+function updateGroupStatsText(sheetName) { 
+    const groupInfo = getGroupKeyBySheet(sheetName); 
+    const gKey = groupInfo.key; 
+    let totalClasses = 0; 
+    let totalStudents = 0; 
+    Object.keys(bigClassesDatabase).forEach(key => { 
+        if (getGroupKeyBySheet(bigClassesDatabase[key].sheet).key === gKey) { 
+            totalClasses++; 
+            totalStudents += bigClassesDatabase[key].students.length; 
+        } 
+    }); 
+    const statsElem = document.getElementById(`group-stats-${gKey}`); 
+    if (statsElem) { statsElem.innerText = `Tổng số lớp: ${totalClasses} | Học sinh: ${totalStudents}`; } 
+}
+
+async function saveDatabaseState() {
+    localStorage.setItem('big_classes_database', JSON.stringify(bigClassesDatabase));
+    if (typeof window.saveToFirebase === 'function') { await window.saveToFirebase(); }
+}
+
+function searchGlobalStudent() { 
+    const keyword = document.getElementById('globalSearchInput').value.trim().toLowerCase(); 
+    const resultBox = document.getElementById('searchResultBox'); 
+    const resultBody = document.getElementById('resultTableBody'); 
+    const resultCount = document.getElementById('resultCount'); 
+    resultBody.innerHTML = ""; 
+    resultBox.style.display = 'none'; 
+    document.querySelectorAll('.student-card').forEach(card => card.classList.remove('highlight-search')); 
+    
+    if (keyword === "") return; 
+    let keywordNoSpace = keyword.replace(/\s+/g, ""); 
+    let matchCount = 0; 
+    let firstScrolledTargetId = null; 
+    let matchedClasses = new Set(); 
+    
+    Object.keys(bigClassesDatabase).forEach(classKey => { 
+        const students = bigClassesDatabase[classKey].students; 
+        students.forEach(student => { 
+            const nameLower = student.name.toLowerCase(); 
+            const phoneTho = student.phone.toString(); 
+            if (nameLower.includes(keyword) || nameLower.replace(/\s+/g, "").includes(keywordNoSpace) || phoneTho.includes(keyword)) { 
+                matchCount++; 
+                matchedClasses.add(classKey); 
+                const cardDomId = `card-${createSafeId(classKey)}-${student.id}`; 
+                if (!firstScrolledTargetId) firstScrolledTargetId = cardDomId; 
+                
+                const targetCardDom = document.getElementById(cardDomId); 
+                if (targetCardDom) targetCardDom.classList.add('highlight-search'); 
+                
+                const tr = document.createElement('tr'); 
+                tr.innerHTML = ` 
+                    <td style="font-weight: bold; color: #fff;">${student.name}</td> 
+                    <td style="color: #00f0ff; font-weight: bold; font-size:0.75rem;">${classKey}</td> 
+                `; 
+                resultBody.appendChild(tr); 
+            } 
+        }); 
+    }); 
+    
+    if (matchCount > 0) { 
+        resultCount.innerText = `Tìm thấy ${matchCount} kết quả`; 
+        resultBox.style.display = 'block'; 
+        
+        matchedClasses.forEach(classKey => { 
+            const classObj = bigClassesDatabase[classKey]; 
+            const groupInfo = getGroupKeyBySheet(classObj.sheet); 
+            const groupWrapper = document.getElementById(`group-wrapper-${groupInfo.key}`); 
+            if (groupWrapper) groupWrapper.classList.add('active'); 
+            
+            const classWrapper = document.querySelector(`[data-classname-box="${classKey}"]`); 
+            if (classWrapper) { classWrapper.classList.add('active'); } 
+        }); 
+        
+        if (firstScrolledTargetId) { 
+            setTimeout(() => { 
+                const element = document.getElementById(firstScrolledTargetId); 
+                if(element) { element.scrollIntoView({ behavior: 'smooth', block: 'center' }); } 
+            }, 150); 
+        } 
+    } else { 
+        alert("Không tìm thấy học viên nào khớp với từ khóa."); 
+    } 
+}
+
+function handleSearchKeyPress(event) { if (event.key === 'Enter') { searchGlobalStudent(); } }
+
+function clearSystemCache() { 
+    if (confirm("Xóa toàn bộ dữ liệu hiện tại trong trình duyệt?")) { 
+        localStorage.removeItem('big_classes_database'); 
+        localStorage.removeItem('big_classes_filename'); 
+        bigClassesDatabase = {}; 
+        renderFullSystemUI(); 
+        document.getElementById('fileStatusMessage').style.color = "#ffd700"; 
+        document.getElementById('fileStatusMessage').innerText = "Chưa có dữ liệu học viên. Vui lòng chọn tệp Excel."; 
+    } 
+}
+// Hàm khóa/mở khóa giao diện dựa trên trạng thái đăng nhập
+function updateUIReadOnlyState() {
+    const isLogged = (currentUser !== "Ẩn danh");
+    
+    // Tìm tất cả các thành phần có thể chỉnh sửa
+    const inputs = document.querySelectorAll('.note-select, .add-student-box input, .add-student-box button');
+    const actionButtons = document.querySelectorAll('.btn-save-eval, .btn-delete, .btn-add, .btn-promote');
+
+    inputs.forEach(el => el.disabled = !isLogged);
+    actionButtons.forEach(el => {
+        el.style.pointerEvents = isLogged ? 'auto' : 'none';
+        el.style.opacity = isLogged ? '1' : '0.5';
+    });
 }
 </script>
 
+<script type="module">
+    // 1. Nhập các thư viện Firebase cần thiết (Phải ở đầu file)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+    // 2. Cấu hình và Khởi tạo Firebase App
+    const firebaseConfig = {
+        apiKey: "AIzaSyDbCF0pFsdXqD14Y-wjWLFoNCGfP1LBlD8",
+        authDomain: "tienganhhavi-12b54.firebaseapp.com",
+        projectId: "tienganhhavi-12b54",
+        storageBucket: "tienganhhavi-12b54.firebasestorage.app",
+        messagingSenderId: "208059039650",
+        appId: "1:208059039650:web:d272318418e01d0f50fcfb",
+        measurementId: "G-XPHJWRWSLZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // 3. Hàm Đăng nhập Google
+    async function loginWithGoogle() {
+        try {
+            const result = await signInWithPopup(auth, provider);
+            window.currentUserEmail = result.user.email; 
+            
+            document.getElementById("loginBox").style.display = "none";
+            document.getElementById("mainApp").style.display = "block";
+            
+            // Tự động tải dữ liệu sau khi đăng nhập thành công
+            await window.loadFromFirebase();
+            alert("Đăng nhập thành công: " + result.user.email);
+        } catch (error) {
+            alert("Lỗi đăng nhập: " + error.message);
+        }
+    }
+    // Gán hàm vào window để HTML gọi được
+    window.loginWithGoogle = loginWithGoogle;
+
+    // 4. Hàm Lưu dữ liệu lên Firebase
+    window.saveToFirebase = async function () { 
+        try { 
+            await setDoc(doc(db, "system", "database"), { 
+                database: bigClassesDatabase, 
+                filename: localStorage.getItem("big_classes_filename") || "", 
+                updatedAt: new Date().toISOString() 
+            }); 
+            console.log("Đã lưu Firebase"); 
+        } catch (err) { console.error("Lỗi lưu Firebase:", err); } 
+    }
+
+    // 5. Hàm Tải dữ liệu từ Firebase
+    window.loadFromFirebase = async function () { 
+        try { 
+            const docRef = doc(db, "system", "database"); 
+            const docSnap = await getDoc(docRef); 
+            if (docSnap.exists()) { 
+                const data = docSnap.data(); 
+                bigClassesDatabase = data.database || {}; 
+                localStorage.setItem("big_classes_database", JSON.stringify(bigClassesDatabase)); 
+                if (data.filename) { localStorage.setItem("big_classes_filename", data.filename); } 
+                renderFullSystemUI(); 
+                console.log("Đã tải dữ liệu từ Firebase"); 
+            } 
+        } catch (err) { console.error("Lỗi đọc Firebase:", err); } 
+    }
+</script>
 </body>
 </html>
